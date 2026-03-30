@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سلسلة الحياة — لعبة البيولوجيا</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+  /* ===== PALETTE (from image) ===== */
+  :root {
+    --abyss:      #05102D;   /* BLeu Abysse */
+    --creme:      #FFF7E3;   /* Blanc crème */
+    --nuit:       #1A2444;   /* Bleu Nuit */
+    --marine:     #2A468B;   /* Bleu Marine */
+    --horizon:    #3D6AC1;   /* Bleu Horizon */
+    --gold-dark:  #B89343;   /* Golden Vibes start */
+    --gold-mid:   #CDB178;   /* Golden Vibes mid */
+    --gold-light: #DFCBA7;   /* Golden Vibes end */
+
+    /* Semantic aliases */
+    --bg-deep:    var(--abyss);
+    --bg-panel:   var(--nuit);
+    --bg-card:    #0f1a38;
+    --text-light: var(--creme);
+    --text-muted: #8899bb;
+    --border:     rgba(255,247,227,0.08);
+    --gold-grad:  linear-gradient(110deg, var(--gold-dark), var(--gold-mid), var(--gold-light));
+    --gold-grad-r:linear-gradient(110deg, var(--gold-light), var(--gold-mid), var(--gold-dark));
+
+    --radius-card: 16px;
+    --radius-btn:  10px;
+    --font-ar:     'Tajawal', sans-serif;
+    --font-disp:   'Cormorant Garamond', Georgia, serif;
+    --shadow:      0 8px 40px rgba(5,16,45,0.7);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+
+  body {
+    font-family: var(--font-ar);
+    background: var(--bg-deep);
+    color: var(--text-light);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ===== BACKGROUND TEXTURE ===== */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 70% 55% at 15% 0%,   rgba(61,106,193,0.13) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 85% 90%,  rgba(184,147,67,0.09) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 30% at 50% 50%,  rgba(26,36,68,0.5)    0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* Fine dot grid */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: radial-gradient(rgba(255,247,227,0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ===== LAYOUT ===== */
+  .app {
+    position: relative; z-index: 1;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 32px 18px 72px;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+    animation: fadeDown 0.7s ease both;
+  }
+
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    background: rgba(184,147,67,0.1);
+    border: 1px solid rgba(205,177,120,0.3);
+    border-radius: 999px;
+    padding: 7px 20px;
+    font-size: 0.72rem;
+    color: var(--gold-mid);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  .logo-badge .gem {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--gold-grad);
+    animation: glow 2s infinite;
+  }
+
+  h1 {
+    font-family: var(--font-disp);
+    font-size: clamp(2.2rem, 6vw, 3.6rem);
+    font-weight: 600;
+    font-style: italic;
+    line-height: 1.1;
+    background: var(--gold-grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+    letter-spacing: 0.01em;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+
+  /* Gold divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px auto 0;
+    max-width: 280px;
+  }
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dark), transparent);
+  }
+  .divider-diamond {
+    width: 6px; height: 6px;
+    background: var(--gold-mid);
+    transform: rotate(45deg);
+  }
+
+  /* ===== SCORE BAR ===== */
+  .score-bar {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 1px;
+    margin-bottom: 28px;
+    animation: fadeDown 0.7s 0.1s ease both;
+    background: rgba(255,247,227,0.05);
+    border: 1px solid rgba(205,177,120,0.18);
+    border-radius: 14px;
+    overflow: hidden;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .score-cell {
+    flex: 1;
+    padding: 14px 20px;
+    text-align: center;
+    background: rgba(5,16,45,0.5);
+    position: relative;
+  }
+
+  .score-cell + .score-cell::before {
+    content: '';
+    position: absolute;
+    right: 0; top: 20%; bottom: 20%;
+    width: 1px;
+    background: rgba(205,177,120,0.15);
+  }
+
+  .score-cell .label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .score-cell .value {
+    font-family: var(--font-disp);
+    font-size: 1.5rem;
+    font-weight: 600;
+    background: var(--gold-grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .score-cell.level-cell .value {
+    font-size: 0.95rem;
+    font-family: var(--font-ar);
+    font-weight: 700;
+    background: none;
+    -webkit-text-fill-color: var(--gold-light);
+    color: var(--gold-light);
+  }
+
+  /* ===== PROGRESS ===== */
+  .progress-wrap {
+    margin-bottom: 26px;
+    animation: fadeDown 0.7s 0.12s ease both;
+  }
+
+  .progress-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    margin-bottom: 7px;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,247,227,0.06);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--gold-grad);
+    border-radius: 999px;
+    transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: -2px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gold-light);
+    box-shadow: 0 0 8px var(--gold-mid);
+  }
+
+  /* ===== CHAIN AREA ===== */
+  .chain-area {
+    background: rgba(26,36,68,0.6);
+    border: 1px solid rgba(205,177,120,0.2);
+    border-radius: var(--radius-card);
+    padding: 20px 24px 18px;
+    margin-bottom: 22px;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    animation: fadeDown 0.7s 0.15s ease both;
+    position: relative;
+    backdrop-filter: blur(6px);
+  }
+
+  .chain-label {
+    position: absolute;
+    top: -10px; right: 18px;
+    background: var(--nuit);
+    padding: 0 10px;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    color: var(--gold-mid);
+    text-transform: uppercase;
+    border: 1px solid rgba(205,177,120,0.2);
+    border-radius: 999px;
+  }
+
+  .chain-empty {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    width: 100%;
+    text-align: center;
+    padding: 8px 0;
+    font-style: italic;
+  }
+
+  .chain-token {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(42,70,139,0.5);
+    border: 1px solid rgba(205,177,120,0.35);
+    border-radius: 9px;
+    padding: 8px 18px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--gold-light);
+    animation: tokenPop 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+
+  .chain-arrow {
+    color: var(--gold-dark);
+    font-size: 1.1rem;
+    animation: tokenPop 0.2s ease both;
+  }
+
+  /* ===== CARDS GRID ===== */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+    gap: 14px;
+    margin-bottom: 26px;
+    animation: fadeUp 0.7s 0.2s ease both;
+  }
+
+  .card {
+    background: linear-gradient(145deg, #0f1d3e, #0a1228);
+    border: 1px solid rgba(255,247,227,0.08);
+    border-radius: var(--radius-card);
+    padding: 30px 14px 22px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--creme);
+    box-shadow: 0 6px 28px rgba(5,16,45,0.6), inset 0 1px 0 rgba(255,247,227,0.04);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Subtle top shimmer */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(205,177,120,0.25), transparent);
+  }
+
+  /* Gold accent top bar */
+  .card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 36%;
+    height: 3px;
+    border-radius: 0 0 4px 4px;
+    background: var(--gold-grad);
+    opacity: 0.4;
+    transition: width 0.2s, opacity 0.2s;
+  }
+
+  .card:hover:not(.used):not(.selected) {
+    transform: translateY(-5px) scale(1.03);
+    border-color: rgba(205,177,120,0.35);
+    box-shadow: 0 16px 40px rgba(5,16,45,0.7), 0 0 0 1px rgba(205,177,120,0.12);
+    background: linear-gradient(145deg, #152248, #0d1a35);
+  }
+
+  .card:hover::after { width: 65%; opacity: 0.8; }
+
+  .card.selected {
+    background: linear-gradient(145deg, #1a2e5c, #0f1e42);
+    border-color: var(--gold-mid);
+    box-shadow: 0 0 0 2px rgba(205,177,120,0.25), 0 8px 32px rgba(5,16,45,0.6);
+    transform: scale(0.97);
+    color: var(--gold-light);
+  }
+
+  .card.selected::after { width: 70%; opacity: 1; }
+
+  .card.used {
+    opacity: 0.22;
+    cursor: not-allowed;
+    transform: none;
+    filter: grayscale(1);
+  }
+
+  .card.correct-flash {
+    animation: correctFlash 0.55s ease forwards;
+  }
+
+  .card.wrong-flash {
+    animation: wrongFlash 0.42s ease forwards;
+  }
+
+  .card-type {
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    color: var(--gold-mid);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    opacity: 0.75;
+    font-family: var(--font-ar);
+    font-weight: 500;
+  }
+
+  /* ===== HINT ===== */
+  .hint-area {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    animation: fadeUp 0.7s 0.28s ease both;
+    font-style: italic;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    animation: fadeUp 0.7s 0.25s ease both;
+  }
+
+  .btn {
+    padding: 13px 30px;
+    border-radius: var(--radius-btn);
+    border: none;
+    font-family: var(--font-ar);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    letter-spacing: 0.02em;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.06);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .btn:hover::after { opacity: 1; }
+  .btn:active { transform: scale(0.95); }
+
+  .btn-submit {
+    background: var(--gold-grad);
+    color: var(--abyss);
+    font-weight: 900;
+    box-shadow: 0 6px 24px rgba(184,147,67,0.4);
+    min-width: 130px;
+  }
+
+  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(184,147,67,0.5); }
+  .btn-submit:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .btn-undo {
+    background: rgba(26,36,68,0.8);
+    color: var(--gold-light);
+    border: 1px solid rgba(205,177,120,0.2);
+  }
+
+  .btn-undo:hover { border-color: rgba(205,177,120,0.4); }
+
+  .btn-reset {
+    background: rgba(5,16,45,0.6);
+    color: #8899bb;
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .btn-reset:hover { color: var(--creme); border-color: rgba(255,255,255,0.15); }
+
+  .btn-next {
+    background: linear-gradient(135deg, var(--marine), var(--horizon));
+    color: var(--creme);
+    box-shadow: 0 6px 24px rgba(42,70,139,0.45);
+    display: none;
+  }
+
+  .btn-next.visible { display: block; }
+  .btn-next:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(61,106,193,0.5); }
+
+  /* ===== FEEDBACK ===== */
+  .feedback {
+    border-radius: var(--radius-card);
+    padding: 18px 24px;
+    margin-bottom: 20px;
+    display: none;
+    align-items: flex-start;
+    gap: 14px;
+    animation: slideIn 0.35s cubic-bezier(0.34,1.36,0.64,1) both;
+    backdrop-filter: blur(6px);
+  }
+
+  .feedback.visible { display: flex; }
+
+  .feedback.success {
+    background: rgba(184,147,67,0.08);
+    border: 1px solid rgba(205,177,120,0.3);
+  }
+
+  .feedback.error {
+    background: rgba(139,42,42,0.12);
+    border: 1px solid rgba(220,80,80,0.25);
+  }
+
+  .feedback-icon { font-size: 1.8rem; line-height: 1; flex-shrink: 0; }
+  .feedback-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .feedback.success .feedback-title {
+    background: var(--gold-grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .feedback.error .feedback-title { color: #e05252; }
+
+  .feedback-text {
+    font-size: 0.86rem;
+    color: var(--text-light);
+    line-height: 1.7;
+    opacity: 0.85;
+  }
+
+  /* ===== OVERLAY ===== */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(5,16,45,0.92);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+  }
+
+  .overlay.visible { display: flex; }
+
+  .overlay-box {
+    background: linear-gradient(160deg, var(--nuit), var(--bg-card));
+    border: 1px solid rgba(205,177,120,0.25);
+    border-radius: 22px;
+    padding: 52px 44px;
+    text-align: center;
+    max-width: 440px;
+    width: 90%;
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(5,16,45,0.8);
+  }
+
+  /* Corner gold accents */
+  .overlay-box::before, .overlay-box::after {
+    content: '';
+    position: absolute;
+    width: 80px; height: 80px;
+  }
+
+  .overlay-box::before {
+    top: 0; right: 0;
+    border-top: 2px solid rgba(205,177,120,0.3);
+    border-right: 2px solid rgba(205,177,120,0.3);
+    border-radius: 0 22px 0 0;
+  }
+
+  .overlay-box::after {
+    bottom: 0; left: 0;
+    border-bottom: 2px solid rgba(205,177,120,0.3);
+    border-left: 2px solid rgba(205,177,120,0.3);
+    border-radius: 0 0 0 22px;
+  }
+
+  .overlay-emoji { font-size: 3.8rem; margin-bottom: 18px; }
+
+  .overlay-title {
+    font-family: var(--font-disp);
+    font-size: 2rem;
+    font-style: italic;
+    font-weight: 600;
+    background: var(--gold-grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+
+  .overlay-sub {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    margin-bottom: 22px;
+    line-height: 1.7;
+  }
+
+  .overlay-score {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--gold-light);
+    margin-bottom: 30px;
+    padding: 14px 20px;
+    background: rgba(184,147,67,0.08);
+    border: 1px solid rgba(205,177,120,0.2);
+    border-radius: 10px;
+  }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes tokenPop {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.65); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 4px var(--gold-mid); opacity: 1; }
+    50%       { box-shadow: 0 0 10px var(--gold-light); opacity: 0.6; }
+  }
+
+  @keyframes correctFlash {
+    0%   { background: rgba(205,177,120,0.3); border-color: var(--gold-mid); transform: scale(1.06); }
+    100% { background: linear-gradient(145deg, #152248, #0d1a35); border-color: rgba(205,177,120,0.3); transform: scale(1); }
+  }
+
+  @keyframes wrongFlash {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-8px); background: rgba(180,60,60,0.2); border-color: #e05252; }
+    60%      { transform: translateX(8px); }
+  }
+
+  @keyframes cardDeal {
+    from { opacity: 0; transform: translateY(28px) scale(0.82) rotate(var(--deal-angle, 0deg)); }
+    to   { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 500px) {
+    .cards-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .card { padding: 20px 8px 16px; font-size: 1rem; }
+    .btn { padding: 12px 18px; font-size: 0.88rem; }
+    h1 { font-size: 2.2rem; }
+    .overlay-box { padding: 36px 22px; }
+    .score-cell { padding: 12px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-badge"><span class="gem"></span> علم الأحياء التفاعلي</div>
+    <h1>سلسلة الحياة</h1>
+    <p class="subtitle">رتّب البطاقات لتشكّل سلسلة سبب ونتيجة صحيحة</p>
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-diamond"></div>
+      <div class="divider-line"></div>
+    </div>
+  </header>
+
+  <!-- SCORE BAR -->
+  <div class="score-bar">
+    <div class="score-cell">
+      <span class="label">النقاط</span>
+      <span class="value" id="scoreDisplay">0</span>
+    </div>
+    <div class="score-cell level-cell">
+      <span class="label">المستوى</span>
+      <span class="value" id="levelDisplay">1</span>
+    </div>
+    <div class="score-cell">
+      <span class="label">الصحيحة</span>
+      <span class="value" id="correctDisplay">0</span>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-wrap">
+    <div class="progress-top">
+      <span>التقدم في اللعبة</span>
+      <span id="progressText">٠ / ٠</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- CHAIN DISPLAY -->
+  <div class="chain-area" id="chainArea">
+    <span class="chain-label">سلسلتك</span>
+    <div class="chain-empty" id="chainEmpty">اضغط على البطاقات لبناء سلسلتك ←</div>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div class="feedback" id="feedback">
+    <div class="feedback-icon" id="feedbackIcon"></div>
+    <div class="feedback-body">
+      <div class="feedback-title" id="feedbackTitle"></div>
+      <div class="feedback-text"  id="feedbackText"></div>
+    </div>
+  </div>
+
+  <!-- CARDS GRID -->
+  <div class="cards-grid" id="cardsGrid"></div>
+
+  <!-- HINT -->
+  <div class="hint-area" id="hintArea"></div>
+
+  <!-- BUTTONS -->
+  <div class="btn-row">
+    <button class="btn btn-submit" id="btnSubmit" disabled>✦ تحقق من الإجابة</button>
+    <button class="btn btn-undo"   id="btnUndo">↩ تراجع</button>
+    <button class="btn btn-next"   id="btnNext" style="display:none">التحدي التالي ←</button>
+    <button class="btn btn-reset"  id="btnReset">↺ إعادة</button>
+  </div>
+
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <div class="overlay-emoji" id="overlayEmoji">🏆</div>
+    <div class="overlay-title"  id="overlayTitle">أحسنت!</div>
+    <div class="overlay-sub"    id="overlaySub"></div>
+    <div class="overlay-score"  id="overlayScore"></div>
+    <button class="btn btn-submit" id="overlayBtn" style="width:100%;font-size:1rem;padding:15px">ابدأ من جديد ✦</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DATA
+   ============================================================ */
+const CHALLENGES = [
+  {
+    level: 1,
+    cards: ['كافيين', 'تسارع', 'قلب'],
+    answer: ['كافيين', 'تسارع', 'قلب'],
+    hint: 'ماذا يفعل الكافيين بنبضات القلب؟',
+    explanation: '☕ الكافيين ينشّط الجهاز العصبي المركزي مما يؤدي إلى تسارع ضربات القلب.',
+    types: { 'كافيين': 'مادة', 'تسارع': 'تأثير', 'قلب': 'عضو' }
+  },
+  {
+    level: 1,
+    cards: ['كافيين', 'دماغ', 'يقظة'],
+    answer: ['كافيين', 'دماغ', 'يقظة'],
+    hint: 'كيف يؤثر الكافيين على الدماغ؟',
+    explanation: '🧠 الكافيين يعيق مستقبلات الأدينوزين في الدماغ، مما يُعزز اليقظة والتركيز.',
+    types: { 'كافيين': 'مادة', 'دماغ': 'عضو', 'يقظة': 'حالة' }
+  },
+  {
+    level: 1,
+    cards: ['كافيين', 'نوم', 'أرق'],
+    answer: ['كافيين', 'نوم', 'أرق'],
+    hint: 'ماذا يحدث للنوم بعد الكافيين؟',
+    explanation: '😴 الكافيين يُعيق هرمونات النوم مما يُسبّب الأرق وصعوبة الاستغراق في النوم.',
+    types: { 'كافيين': 'مادة', 'نوم': 'حالة', 'أرق': 'أعراض' }
+  },
+  {
+    level: 2,
+    cards: ['إجهاد', 'كورتيزول', 'دم', 'سكر'],
+    answer: ['إجهاد', 'كورتيزول', 'دم', 'سكر'],
+    hint: 'كيف يرفع التوتر السكر في الدم؟',
+    explanation: '😰 الإجهاد يُحفّز إفراز الكورتيزول الذي يدخل الدم ويرفع مستوى السكر لتوفير طاقة سريعة.',
+    types: { 'إجهاد': 'محفز', 'كورتيزول': 'هرمون', 'دم': 'عضو', 'سكر': 'مادة' }
+  },
+  {
+    level: 2,
+    cards: ['ضوء', 'شبكية', 'ميلاتونين', 'نوم'],
+    answer: ['ضوء', 'شبكية', 'ميلاتونين', 'نوم'],
+    hint: 'كيف يؤثر الضوء على النوم؟',
+    explanation: '💡 الضوء يصل إلى شبكية العين فيُثبّط إفراز الميلاتونين، مما يُقلل الرغبة في النوم.',
+    types: { 'ضوء': 'محفز', 'شبكية': 'عضو', 'ميلاتونين': 'هرمون', 'نوم': 'حالة' }
+  },
+  {
+    level: 2,
+    cards: ['تمرين', 'عضلات', 'حمض', 'تعب'],
+    answer: ['تمرين', 'عضلات', 'حمض', 'تعب'],
+    hint: 'لماذا تتعب العضلات عند التمرين الشديد؟',
+    explanation: '🏋️ التمرين الشديد يجعل العضلات تُنتج حمض اللاكتيك عند نقص الأوكسجين، مما يُسبّب التعب.',
+    types: { 'تمرين': 'محفز', 'عضلات': 'عضو', 'حمض': 'مادة', 'تعب': 'أعراض' }
+  },
+  {
+    level: 3,
+    cards: ['توتر', 'قلب', 'ضغط', 'شرايين', 'خطر'],
+    answer: ['توتر', 'قلب', 'ضغط', 'شرايين', 'خطر'],
+    hint: 'ما مسار تأثير التوتر على القلب والأوعية؟',
+    explanation: '❤️ التوتر المزمن يُرهق القلب ويرفع الضغط، مما يُصلّب الشرايين ويُهدد بخطر الأزمة القلبية.',
+    types: { 'توتر': 'محفز', 'قلب': 'عضو', 'ضغط': 'تأثير', 'شرايين': 'عضو', 'خطر': 'نتيجة' }
+  },
+  {
+    level: 3,
+    cards: ['أنسولين', 'خلايا', 'غلوكوز', 'طاقة', 'نشاط'],
+    answer: ['أنسولين', 'خلايا', 'غلوكوز', 'طاقة', 'نشاط'],
+    hint: 'كيف يُوصل الأنسولين الطاقة للجسم؟',
+    explanation: '⚡ الأنسولين يفتح أبواب الخلايا لاستقبال الغلوكوز وتحويله إلى طاقة تُغذّي النشاط الجسدي.',
+    types: { 'أنسولين': 'هرمون', 'خلايا': 'عضو', 'غلوكوز': 'مادة', 'طاقة': 'تأثير', 'نشاط': 'حالة' }
+  }
+];
+
+/* ===== STATE ===== */
+const state = {
+  challenges: [], currentIdx: 0,
+  score: 0, correctCount: 0,
+  selected: [], submitted: false, totalCards: 0
+};
+
+/* ===== DOM ===== */
+const dom = {
+  grid:          document.getElementById('cardsGrid'),
+  chainArea:     document.getElementById('chainArea'),
+  chainEmpty:    document.getElementById('chainEmpty'),
+  feedback:      document.getElementById('feedback'),
+  feedbackIcon:  document.getElementById('feedbackIcon'),
+  feedbackTitle: document.getElementById('feedbackTitle'),
+  feedbackText:  document.getElementById('feedbackText'),
+  scoreDisplay:  document.getElementById('scoreDisplay'),
+  levelDisplay:  document.getElementById('levelDisplay'),
+  correctDisplay:document.getElementById('correctDisplay'),
+  progressText:  document.getElementById('progressText'),
+  progressFill:  document.getElementById('progressFill'),
+  btnSubmit:     document.getElementById('btnSubmit'),
+  btnUndo:       document.getElementById('btnUndo'),
+  btnNext:       document.getElementById('btnNext'),
+  btnReset:      document.getElementById('btnReset'),
+  hintArea:      document.getElementById('hintArea'),
+  overlay:       document.getElementById('overlay'),
+  overlayEmoji:  document.getElementById('overlayEmoji'),
+  overlayTitle:  document.getElementById('overlayTitle'),
+  overlaySub:    document.getElementById('overlaySub'),
+  overlayScore:  document.getElementById('overlayScore'),
+  overlayBtn:    document.getElementById('overlayBtn'),
+};
+
+/* ===== UTILS ===== */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function toAr(n) {
+  return String(n).replace(/\d/g, d => '0123456789'[d]);
+}
+
+/* ===== INIT ===== */
+function initGame() {
+  state.challenges   = shuffle(CHALLENGES);
+  state.currentIdx   = 0;
+  state.score        = 0;
+  state.correctCount = 0;
+  state.totalCards   = state.challenges.length;
+  updateScoreBar();
+  loadChallenge();
+  dom.overlay.classList.remove('visible');
+}
+
+/* ===== LOAD CHALLENGE ===== */
+function loadChallenge() {
+  const ch = state.challenges[state.currentIdx];
+  state.selected  = [];
+  state.submitted = false;
+
+  const displayCards = shuffle(ch.cards);
+
+  dom.levelDisplay.textContent  = toAr(ch.level);
+  dom.progressText.textContent  = `${toAr(state.currentIdx)} / ${toAr(state.totalCards)}`;
+  dom.progressFill.style.width  = `${(state.currentIdx / state.totalCards) * 100}%`;
+  dom.hintArea.textContent      = `✦ ${ch.hint}`;
+
+  dom.feedback.classList.remove('visible', 'success', 'error');
+  dom.btnSubmit.disabled = true;
+  dom.btnNext.style.display = 'none';
+
+  renderChain();
+
+  dom.grid.innerHTML = '';
+  displayCards.forEach((word, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.word = word;
+
+    const angle = (Math.random() - 0.5) * 3;
+    card.style.setProperty('--deal-angle', `${angle}deg`);
+    card.style.animation = `cardDeal 0.4s ${i * 0.07}s cubic-bezier(0.34,1.36,0.64,1) both`;
+
+    const type = ch.types?.[word] || '';
+    if (type) {
+      const badge = document.createElement('div');
+      badge.className = 'card-type';
+      badge.textContent = type;
+      card.appendChild(badge);
+    }
+
+    const label = document.createElement('div');
+    label.textContent = word;
+    card.appendChild(label);
+
+    card.addEventListener('click', () => onCardClick(card, word));
+    dom.grid.appendChild(card);
+  });
+}
+
+/* ===== CARD CLICK ===== */
+function onCardClick(cardEl, word) {
+  if (state.submitted || cardEl.classList.contains('used')) return;
+
+  if (cardEl.classList.contains('selected')) {
+    if (state.selected[state.selected.length - 1] === word) {
+      state.selected.pop();
+      cardEl.classList.remove('selected');
+    }
+  } else {
+    state.selected.push(word);
+    cardEl.classList.add('selected');
+  }
+
+  renderChain();
+  dom.btnSubmit.disabled = state.selected.length < 2;
+}
+
+/* ===== RENDER CHAIN ===== */
+function renderChain() {
+  // Keep the label span
+  const label = dom.chainArea.querySelector('.chain-label');
+  dom.chainArea.innerHTML = '';
+  if (label) dom.chainArea.appendChild(label);
+
+  if (state.selected.length === 0) {
+    dom.chainArea.appendChild(dom.chainEmpty);
+    return;
+  }
+  state.selected.forEach((word, i) => {
+    const token = document.createElement('span');
+    token.className = 'chain-token';
+    token.textContent = word;
+    dom.chainArea.appendChild(token);
+    if (i < state.selected.length - 1) {
+      const arrow = document.createElement('span');
+      arrow.className = 'chain-arrow';
+      arrow.textContent = '←';
+      dom.chainArea.appendChild(arrow);
+    }
+  });
+}
+
+/* ===== SUBMIT ===== */
+function onSubmit() {
+  const ch = state.challenges[state.currentIdx];
+  const correct = JSON.stringify(state.selected) === JSON.stringify(ch.answer);
+  state.submitted = true;
+  const cards = dom.grid.querySelectorAll('.card');
+
+  if (correct) {
+    cards.forEach(c => { c.classList.remove('selected'); c.classList.add('used', 'correct-flash'); });
+    const pts = ch.level === 1 ? 10 : ch.level === 2 ? 20 : 30;
+    state.score += pts; state.correctCount++;
+    updateScoreBar();
+    showFeedback(true, '✦ إجابة صحيحة!', ch.explanation);
+    dom.btnSubmit.disabled = true;
+    dom.btnNext.style.display = 'inline-block';
+    dom.hintArea.textContent = '';
+  } else {
+    cards.forEach(c => {
+      if (state.selected.includes(c.dataset.word)) {
+        c.classList.add('wrong-flash');
+        c.addEventListener('animationend', () => c.classList.remove('wrong-flash'), { once: true });
+      }
+    });
+    showFeedback(false, '✕ حاول مرة أخرى', 'ترتيب البطاقات غير صحيح. فكّر في مسار السبب والنتيجة.');
+    setTimeout(() => {
+      state.selected = []; state.submitted = false;
+      cards.forEach(c => c.classList.remove('selected'));
+      renderChain();
+      dom.btnSubmit.disabled = true;
+    }, 950);
+  }
+}
+
+function showFeedback(success, title, text) {
+  dom.feedback.classList.remove('visible', 'success', 'error');
+  void dom.feedback.offsetWidth;
+  dom.feedbackIcon.textContent  = success ? '✦' : '✕';
+  dom.feedbackTitle.textContent = title;
+  dom.feedbackText.textContent  = text;
+  dom.feedback.classList.add('visible', success ? 'success' : 'error');
+}
+
+function onNext() {
+  state.currentIdx++;
+  if (state.currentIdx >= state.challenges.length) showEndOverlay();
+  else {
+    loadChallenge();
+    dom.progressText.textContent = `${toAr(state.currentIdx)} / ${toAr(state.totalCards)}`;
+    dom.progressFill.style.width = `${(state.currentIdx / state.totalCards) * 100}%`;
+  }
+}
+
+function onUndo() {
+  if (state.submitted || !state.selected.length) return;
+  const last = state.selected.pop();
+  const cards = dom.grid.querySelectorAll('.card');
+  for (let i = cards.length - 1; i >= 0; i--) {
+    if (cards[i].dataset.word === last && cards[i].classList.contains('selected')) {
+      cards[i].classList.remove('selected'); break;
+    }
+  }
+  renderChain();
+  dom.btnSubmit.disabled = state.selected.length < 2;
+}
+
+function onReset() {
+  dom.feedback.classList.remove('visible', 'success', 'error');
+  loadChallenge();
+}
+
+function updateScoreBar() {
+  dom.scoreDisplay.textContent   = toAr(state.score);
+  dom.correctDisplay.textContent = toAr(state.correctCount);
+}
+
+function showEndOverlay() {
+  const pct = Math.round((state.correctCount / state.totalCards) * 100);
+  let emoji = '🥉', title = 'أحسنت!';
+  if (pct >= 90) { emoji = '🏆'; title = 'ممتاز! أنت بيولوجي محترف'; }
+  else if (pct >= 60) { emoji = '🥈'; title = 'جيد جداً! استمر في التعلم'; }
+  dom.overlayEmoji.textContent = emoji;
+  dom.overlayTitle.textContent = title;
+  dom.overlaySub.textContent   = `أكملت جميع التحديات بنسبة نجاح ${toAr(pct)}%`;
+  dom.overlayScore.textContent = `✦ مجموع نقاطك: ${toAr(state.score)}`;
+  dom.overlay.classList.add('visible');
+}
+
+dom.btnSubmit.addEventListener('click', onSubmit);
+dom.btnUndo.addEventListener('click', onUndo);
+dom.btnNext.addEventListener('click', onNext);
+dom.btnReset.addEventListener('click', onReset);
+dom.overlayBtn.addEventListener('click', initGame);
+
+initGame();
+</script>
+</body>
+</html>
